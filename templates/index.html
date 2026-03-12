@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Flow | Daniel Pacheco</title>
+    <!-- Referencias Flask -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK Modules for Authentication -->
+    <script type="module" src="{{ url_for('static', filename='app.js') }}" defer></script>
+</head>
+<body class="dark-theme">
+    <!-- Pantalla de login -->
+    <div id="login-view" class="login-container">
+        <div class="glass-panel login-card">
+            <div class="logo login-logo">
+                <i class="fa-solid fa-wallet"></i>
+                <span>CashFlow Daniel Pacheco</span>
+            </div>
+            <h2>Bienvenido</h2>
+            <p class="text-muted">Plataforma Financiera de Daniel Pacheco</p>
+            
+            <div style="display: flex; justify-content: center; width: 100%;">
+                <button id="main-login-btn" class="btn-primary mt-4 google-btn">
+                    <img src="https://img.icons8.com/color/48/000000/google-logo.png" alt="Google" width="24" style="margin-right:8px;">
+                    Iniciar Sesión con Google
+                </button>
+            </div>
+            <p class="text-muted" style="margin-top:20px; font-size:0.85rem;">🔒 Tus datos son 100% privados y cifrados</p>
+        </div>
+    </div>
+
+    <div class="app-container" id="app-content" style="display: none;">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-wallet"></i>
+                <span style="font-size: 1.1rem; text-wrap: nowrap;">Daniel Pacheco App</span>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard"><i class="fa-solid fa-chart-pie"></i> <span>Dashboard</span></li>
+                <li data-target="transactions"><i class="fa-solid fa-list-ul"></i> <span>Transacciones</span></li>
+                <li data-target="settings"><i class="fa-solid fa-gear"></i> <span>Ajustes</span></li>
+            </ul>
+            <div class="user-profile">
+                <!-- Auth section -->
+                <div id="auth-section">
+                    <button id="login-btn" class="btn-primary" style="display:none;"><i class="fa-brands fa-google"></i> Login</button>
+                    <div id="user-info" style="display:none; flex-direction:column; gap:12px; width:100%;">
+                        <div style="display:flex; align-items:center; gap:12px;">
+                            <img src="https://ui-avatars.com/api/?name=User&background=random" alt="Avatar" id="user-avatar">
+                            <span id="user-name">Usuario</span>
+                        </div>
+                        <button id="logout-btn" class="btn-primary" style="background:var(--danger-color); width:100%; font-size:0.9rem; padding:8px;">
+                            <i class="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+    <!-- Main Content Area -->
+        <main class="main-content glass-panel">
+            <!-- Header -->
+            <header>
+                <div>
+                    <h1 id="page-title">Dashboard Financiero</h1>
+                    <p class="subtitle" id="current-date">Cargando fecha...</p>
+                </div>
+                <button class="btn-primary" id="add-transaction-btn">
+                    <i class="fa-solid fa-plus"></i> Nueva Transacción
+                </button>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="dashboard-view" class="view-section active">
+                <div class="summary-cards">
+                    <div class="card balance-card">
+                        <div class="card-header">
+                            <h3>Balance Total</h3>
+                            <i class="fa-solid fa-scale-balanced"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="total-balance">$0.00</h2>
+                            <p class="trend positive"><i class="fa-solid fa-arrow-trend-up"></i> <span>0% vs mes pasado</span></p>
+                        </div>
+                    </div>
+                    <div class="card income-card">
+                        <div class="card-header">
+                            <h3>Ingresos</h3>
+                            <i class="fa-solid fa-arrow-down" style="color: var(--success-color)"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="total-income">$0.00</h2>
+                        </div>
+                    </div>
+                    <div class="card expense-card">
+                        <div class="card-header">
+                            <h3>Gastos</h3>
+                            <i class="fa-solid fa-arrow-up" style="color: var(--danger-color)"></i>
+                        </div>
+                        <div class="card-body">
+                            <h2 id="total-expense">$0.00</h2>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-wrapper">
+                        <h3>Flujo Mensual</h3>
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                    <div class="chart-wrapper">
+                        <h3>Gastos por Categoría</h3>
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="recent-transactions mt-4">
+                    <div class="section-header">
+                        <h3>Transacciones Recientes</h3>
+                        <button class="btn-text" id="view-all-btn">Ver todas</button>
+                    </div>
+                    <div class="transactions-list" id="recent-transactions-list">
+                        <!-- Transacciones inyectadas por JS -->
+                        <div class="empty-state">
+                            <i class="fa-solid fa-receipt"></i>
+                            <p>No hay transacciones aún.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions View -->
+            <section id="transactions-view" class="view-section" style="display: none;">
+                <div class="filters-bar">
+                    <div class="search-box">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="search-input" placeholder="Buscar transacción...">
+                    </div>
+                    <select id="filter-type" class="glass-input">
+                        <option value="all">Todos los tipos</option>
+                        <option value="income">Ingresos</option>
+                        <option value="expense">Gastos</option>
+                    </select>
+                    <select id="filter-month" class="glass-input">
+                        <option value="all">Este Mes</option>
+                        <!-- Opciones generadas por JS -->
+                    </select>
+                </div>
+                
+                <div class="table-container">
+                    <table class="transactions-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Monto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="all-transactions-list">
+                            <!-- Inyectado por JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+             <!-- Settings View -->
+            <section id="settings-view" class="view-section" style="display: none;">
+                <h2>Configuración</h2>
+                <div class="settings-group glass-panel">
+                    <h3>Preferencias</h3>
+                    <div class="setting-item">
+                        <label>Modo Oscuro</label>
+                        <label class="switch">
+                            <input type="checkbox" id="theme-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for New Transaction -->
+    <div class="modal-overlay" id="transaction-modal">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h2>Nueva Transacción</h2>
+                <button class="btn-icon" id="close-modal"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form id="transaction-form">
+                <div class="type-selector">
+                    <label class="radio-card">
+                        <input type="radio" name="type" value="expense" checked>
+                        <div class="card-content expense-selected">
+                            <i class="fa-solid fa-arrow-up"></i> Gasto
+                        </div>
+                    </label>
+                    <label class="radio-card">
+                        <input type="radio" name="type" value="income">
+                        <div class="card-content income-selected">
+                            <i class="fa-solid fa-arrow-down"></i> Ingreso
+                        </div>
+                    </label>
+                </div>
+
+                <div class="form-group">
+                    <label for="amount">Monto <span style="color:var(--danger-color)">*</span></label>
+                    <div class="input-with-icon">
+                        <span>$</span>
+                        <input type="number" id="amount" step="0.01" min="0.01" required placeholder="0.00" class="glass-input">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="description">Descripción <span style="color:var(--danger-color)">*</span></label>
+                    <input type="text" id="description" required placeholder="Ej. Compra de supermercado" class="glass-input">
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="category">Categoría <span style="color:var(--danger-color)">*</span></label>
+                        <select id="category" required class="glass-input">
+                            <option value="" disabled selected>Selecciona...</option>
+                            <option value="Alimentación">Alimentación</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Vivienda">Vivienda</option>
+                            <option value="Entretenimiento">Entretenimiento</option>
+                            <option value="Salud">Salud</option>
+                            <option value="Salario">Salario</option>
+                            <option value="Inversiones">Inversiones</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date">Fecha <span style="color:var(--danger-color)">*</span></label>
+                        <input type="date" id="date" required class="glass-input">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-primary w-100 mt-4">Guardar Transacción</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>
