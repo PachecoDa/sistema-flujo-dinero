@@ -200,8 +200,9 @@ async function handleFormSubmit(e) {
             // Actualizar tabla recargando desde Python
             loadTransactions();
         } else {
-            console.error(await response.text());
-            alert("Error al guardar la transacción en el servidor");
+            const errorData = await response.json();
+            console.error(errorData);
+            alert("Error del servidor: " + (errorData.error || "Desconocido") + "\n" + (errorData.details || ""));
         }
     } catch(err) {
         console.error("Error de conexión:", err);
