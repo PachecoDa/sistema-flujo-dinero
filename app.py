@@ -7,19 +7,31 @@ import os
 app = Flask(__name__)
 
 # Configurar Firebase de forma segura
-# Buscamos la llave en la misma carpeta donde está app.py
-current_dir = os.path.dirname(os.path.abspath(__file__))
-cred_path = os.path.join(current_dir, 'serviceAccountKey.json')
+import json
+
+# Primero intentamos leer la llave desde una variable de entorno (Ideal para Render)
+service_account_info = os.environ.get('FIREBASE_SERVICE_ACCOUNT')
+
+last_init_error = None
 
 try:
-    cred = credentials.Certificate(cred_path)
-    # Evitar inicializar multiples veces si se recarga el servidor en desarrollo
+    if service_account_info:
+        # Limpiar posibles espacios o comillas si se pegó mal en Render
+        service_account_info = service_account_info.strip()
+        cred_dict = json.loads(service_account_info)
+        cred = credentials.Certificate(cred_dict)
+    else:
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        cred_path = os.path.join(current_dir, 'serviceAccountKey.json')
+        cred = credentials.Certificate(cred_path)
+
     if not firebase_admin._apps:
         firebase_admin.initialize_app(cred)
     db = firestore.client()
-    print("Conexión a Firestore exitosa desde Python.")
+    print("Conexión a Firestore exitosa.")
 except Exception as e:
-    print(f"Error conectando a Firebase: {e}")
+    last_init_error = str(e)
+    print(f"Error conectando a Firebase: {last_init_error}")
     db = None
 
 # Rutas del Servidor Flask
@@ -33,7 +45,7 @@ def index():
 def get_transactions():
     """Obtiene las transacciones desde Firestore, filtradas por usuario."""
     if not db:
-        return jsonify({"error": "No database connection"}), 500
+        return jsonify({"error": "No database connection", "details": last_init_error}), 500
         
     user_id = request.args.get('userId')
     if not user_id:
